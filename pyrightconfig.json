@@ -1,0 +1,9 @@
+{
+    "typeCheckingMode": "strict",
+    "include": ["mmdb_server"],
+    "exclude": ["**/node_modules", "**/__pycache__"],
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false,
+    "pythonVersion": "3.12",
+    "pythonPlatform": "All"
+}

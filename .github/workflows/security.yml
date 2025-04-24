@@ -27,4 +27,4 @@ jobs:
       - name: Run Bandit
         run: |
           pip install bandit
-          bandit -r mmdb_server/ -ll 
+          bandit -r mmdb_server/ -ll

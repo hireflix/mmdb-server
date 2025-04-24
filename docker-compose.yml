@@ -23,4 +23,4 @@ services:
       - geoip-updater
 
 volumes:
-  mmdb_data: 
+  mmdb_data:
