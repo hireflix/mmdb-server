@@ -31,6 +31,7 @@ jobs:
       issues: write
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -177,3 +178,29 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  create-release:
+    needs: [prepare-release, build-and-push]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare-release.outputs.new_version }}
+          name: v${{ needs.prepare-release.outputs.new_version }}
+          body: |
+            ## What's Changed
+            ${{ needs.prepare-release.outputs.changelog }}
+
+            ## 📦 Docker Images
+
+            Pull the new version:
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare-release.outputs.new_version }}
+            ```
+          draft: ${{ github.event.inputs.draft }}
+          prerelease: false
+          token: ${{ secrets.RELEASE_TOKEN }}
