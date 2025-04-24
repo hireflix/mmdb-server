@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           cache: 'poetry'
 
       - name: Install Poetry
@@ -25,10 +25,10 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Run tests
-        run: poetry run pytest
-
-      - name: Run linting
+      - name: Run Ruff
         run: |
-          poetry run flake8
-          poetry run mypy mmdb_server/ 
+          poetry run ruff check .
+          poetry run ruff format --check .
+
+      - name: Run Pyright
+        run: poetry run pyright

@@ -11,10 +11,45 @@ repository = "https://github.com/hireflix/mmdb-server"
 serve = "mmdb_server.mmdb_server:main"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.13"
 falcon = "^3.1.1"
 maxminddb = "^2.4.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.0"
+pyright = "^1.1.350"
+pre-commit = "^3.6.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Enable pycodestyle (E), pyflakes (F), isort (I), pep8-naming (N), flake8-bugbear (B)
+select = ["E", "F", "I", "N", "B", "W", "C90"]
+ignore = []
+
+# Same as Black
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.10
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.pyright]
+include = ["mmdb_server", "scripts", "tools"]
+exclude = ["**/node_modules", "**/__pycache__", "**/.venv"]
+venvPath = "."
+venv = ".venv"
+
+# Type checking strictness
+typeCheckingMode = "strict"    # Can be "off", "basic", or "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false # Set to true if you want to enforce type stubs
+pythonVersion = "3.10"
