@@ -11,9 +11,17 @@ import time
 from ipaddress import ip_address
 import json
 from wsgiref.simple_server import make_server
+import logging
 
 import falcon
 import maxminddb
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 version = "0.5"
 config = configparser.ConfigParser()
@@ -122,7 +130,7 @@ app.add_route('/', MyGeoLookup())
 
 def main():
     with make_server('', port, app) as httpd:
-        print(f'Serving on port {port}...')
+        logger.info(f'Serving on port {port}...')
         httpd.serve_forever()
 
 

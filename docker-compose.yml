@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  geoip-updater:
+    image: maxmindinc/geoipupdate
+    volumes:
+      - mmdb_data:/usr/share/GeoIP
+    env_file:
+      - .env.geoip-updater
+    environment:
+      - GEOIPUPDATE_FREQUENCY=24
+    restart: unless-stopped
+
+  mmdb-server:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - mmdb_data:/app/db
+    restart: unless-stopped
+    depends_on:
+      - geoip-updater
+
+volumes:
+  mmdb_data: 

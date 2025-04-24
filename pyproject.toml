@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "mmdb-server"
 version = "0.5.0"
-description = ""
-authors = ["Alexandre Dulaunoy"]
+description = "Fast API server to lookup IP addresses for their geographic location"
+authors = ["Alexandre Dulaunoy", "Daniel <daniel@hireflix.com>"]
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/hireflix/mmdb-server"
 
 [tool.poetry.scripts]
 serve = "mmdb_server.mmdb_server:main"
@@ -12,7 +14,6 @@ serve = "mmdb_server.mmdb_server:main"
 python = "^3.10"
 falcon = "^3.1.1"
 maxminddb = "^2.4.0"
-
 
 [build-system]
 requires = ["poetry-core"]
