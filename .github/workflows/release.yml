@@ -71,6 +71,14 @@ jobs:
           poetry version ${{ github.event.inputs.version_type }}
           echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
 
+      - name: Get previous tag
+        id: get_previous_tag
+        run: |
+          # Try to get the latest tag, if it fails default to empty
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
       - name: Generate changelog
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v4
@@ -80,14 +88,6 @@ jobs:
           fromTag: ${{ steps.get_previous_tag.outputs.tag || github.event.repository.default_branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-
-      - name: Get previous tag
-        id: get_previous_tag
-        run: |
-          # Try to get the latest tag, if it fails default to empty
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
-        continue-on-error: true
 
       - name: Update CHANGELOG.md
         run: |
