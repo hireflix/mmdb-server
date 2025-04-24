@@ -17,6 +17,7 @@ services:
       - "8000:8000"
     volumes:
       - mmdb_data:/app/db
+      - ./etc/server.conf.docker:/app/etc/server.conf
     restart: unless-stopped
     depends_on:
       - geoip-updater

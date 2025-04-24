@@ -1,0 +1,5 @@
+[global]
+mmdb_file = /app/db/GeoLite2-ASN.mmdb,/app/db/GeoLite2-City.mmdb,/app/db/GeoLite2-Country.mmdb
+country_file = /app/db/country.json
+lookup_pubsub = no 
+port = 8000 

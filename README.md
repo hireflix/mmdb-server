@@ -2,6 +2,18 @@
 
 This is a fork of [mmdb-server](https://github.com/adulau/mmdb-server) with optimized Docker support. The original project is by Alexandre Dulaunoy.
 
+## Important Note About Database Format
+
+This server is specifically designed to work with MaxMind's GeoIP2/GeoLite2 database format. While it can technically work with any MMDB format file, the response structure is tightly coupled to MaxMind's data structure, including:
+- GeoLite2-ASN (for AS number and organization)
+- GeoLite2-City (for city-level geolocation)
+- GeoLite2-Country (for country-level geolocation)
+
+The server will preserve MaxMind's original data structure and add some custom fields:
+- `meta`: Server metadata about the database
+- `ip`: The queried IP address
+- `country_info`: Additional country information from a separate source
+
 ## Changes in this fork
 
 - Optimized Docker image size (reduced from ~300MB to ~100MB)
@@ -9,6 +21,7 @@ This is a fork of [mmdb-server](https://github.com/adulau/mmdb-server) with opti
 - Support for volume mounting of database files
 - Non-root container execution (using distroless base image)
 - Integration with MMDB format databases
+- Graceful shutdown
 - Example docker-compose.yml provided for easy deployment
 
 mmdb-server is an open source fast API server to lookup IP addresses for their geographic location, AS number. The server can be used with any [MaxMind DB File Format](https://maxmind.github.io/MaxMind-DB/) or file in the same format.
@@ -60,60 +73,80 @@ This setup includes:
 
 `curl -s http://127.0.0.1:8000/geolookup/188.65.220.25 | jq .`
 
-```json
-[
-  {
-    "country": {
-      "iso_code": "BE"
-    },
-    "meta": {
-      "description": {
-        "en": "GeoLite2 Country database"
-      },
-      "build_db": "2024-03-19 17:23:15",
-      "db_source": "GeoLite2-Country",
-      "nb_nodes": 1159974
-    },
-    "ip": "188.65.220.25",
-    "country_info": {
-      "Country": "Belgium",
-      "Alpha-2 code": "BE",
-      "Alpha-3 code": "BEL",
-      "Numeric code": "56",
-      "Latitude (average)": "50.8333",
-      "Longitude (average)": "4"
-    }
-  }
-]
-```
-
 # Output format
 
-The output format is an array of JSON objects (to support multiple geo location databases). Each JSON object includes:
-- `meta`: Information about the database source and build time
-- `country`: Geographic location and ASN information of the queried IP address
-- `ip`: The queried IP address
-- `country_info`: Additional country information (codes, coordinates)
+The output format is an array of JSON objects (to support multiple geo location databases). The structure of each object depends on the MaxMind database type being used:
 
-# API Documentation
+**For GeoLite2-ASN database:**
+```json
+{
+  "autonomous_system_number": 15169,
+  "autonomous_system_organization": "Google LLC",
+  "ip": "8.8.8.8",
+  "meta": {
+    "description": {"en": "GeoLite2-ASN database"},
+    "build_db": "2024-03-19 17:23:15",
+    "db_source": "GeoLite2-ASN",
+    "nb_nodes": 1159974
+  }
+}
+```
 
-The API is documented using the OpenAPI 3.1 specification. You can find the complete API documentation in the `openapi.yaml` file. This specification includes:
-- Detailed endpoint descriptions
-- Request/response schemas
-- Example requests and responses
-- Error handling documentation
+**For GeoLite2-Country/City databases:**
+```json
+{
+  "continent": {
+    "code": "NA",
+    "geoname_id": 6255149,
+    "names": {"en": "North America", "es": "Norteamérica", ...}
+  },
+  "country": {
+    "geoname_id": 6252001,
+    "iso_code": "US",
+    "names": {"en": "United States", "es": "Estados Unidos", ...}
+  },
+  "location": {  // Only in City database
+    "accuracy_radius": 1000,
+    "latitude": 37.751,
+    "longitude": -97.822,
+    "time_zone": "America/Chicago"
+  },
+  "ip": "8.8.8.8",
+  "meta": {
+    "description": {"en": "GeoLite2-City database"},
+    "build_db": "2024-03-19 17:23:15",
+    "db_source": "GeoLite2-City",
+    "nb_nodes": 1159974
+  },
+  "country_info": {
+    "Country": "United States",
+    "Alpha-2 code": "US",
+    "Alpha-3 code": "USA",
+    "Numeric code": "840",
+    "Latitude (average)": "38",
+    "Longitude (average)": "-97"
+  }
+}
+```
 
-You can use this specification with tools like Swagger UI, Postman, or any OpenAPI-compatible tool to:
-- Explore the API interactively
-- Generate client libraries in various programming languages
-- Test the API endpoints
-- Understand the response formats
+Note: The exact fields available depend on the MaxMind database being used. The server adds the `meta`, `ip`, and `country_info` fields to MaxMind's original structure.
 
-# Public online version of the original mmdb-server implementation by Alexandre Dulaunoy
+# API Endpoints
 
-- [https://ip.circl.lu/](https://ip.circl.lu/) - lookup via [https://ip.circl.lu/geolookup/8.8.8.8](https://ip.circl.lu/geolookup/8.8.8.8)
-- [https://ipv4.circl.lu](https://ipv4.circl.lu/) If you are dual-homed IPv6/IPv4, return your IPv4 address. 
-- [https://ipv6.circl.lu](https://ipv6.circl.lu/) If you are dual-homed IPv6/IPv4, return your IPv6 address.
+The server provides two main endpoints:
+
+## GET /geolookup/{ip}
+Look up information for a specific IP address.
+- Parameter: `ip` (IPv4 or IPv6 address)
+- Example: `curl -s http://127.0.0.1:8000/geolookup/8.8.8.8 | jq .`
+
+## GET /
+Look up information for the requesting client's IP address.
+- Example: `curl -s http://127.0.0.1:8000/ | jq .`
+
+For detailed information about the fields returned by each database type, please refer to MaxMind's official documentation:
+- [GeoIP2 City/Country Database Fields](https://dev.maxmind.com/geoip/docs/databases/city-and-country?lang=en)
+- [GeoIP2 ASN Database Fields](https://dev.maxmind.com/geoip/docs/databases/asn?lang=en)
 
 # Source Code
 
