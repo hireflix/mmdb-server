@@ -44,6 +44,20 @@ Python 3.10+ is required to run the mmdb-server with poetry.
 
 The server can use any database in the MMDB format. Here's how to run it:
 
+### Using Pre-built Images
+
+You can pull the latest version from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/hireflix/mmdb-server:latest
+```
+
+Or use a specific version:
+
+```bash
+docker pull ghcr.io/hireflix/mmdb-server:1.0
+```
+
 ### Setup with Docker Compose and MaxMind's GeoIP Lite DB
 
 1. Sign up for a free MaxMind account at https://www.maxmind.com/en/geolite2/signup (if you want to use MaxMind's GeoLite2 databases)
@@ -158,6 +172,44 @@ Source code available at:
 
 This program is a modified version of mmdb-server, originally created by Alexandre Dulaunoy.
 Both the original work and this modified version are licensed under the GNU Affero General Public License version 3.
+
+# Development
+
+## Release Process
+
+To create a new release:
+
+1. Ensure you're on the `main` branch with a clean working directory
+2. Run the release script with the desired version bump type:
+   ```bash
+   ./scripts/release.sh <major|minor|patch>
+   ```
+
+The script will:
+- Update the version in `pyproject.toml`
+- Update `CHANGELOG.md` (if it exists)
+- Create and push a git tag
+- Trigger the GitHub Actions release workflow
+
+The release workflow will:
+1. Run tests and security checks
+2. Build multi-architecture Docker images
+3. Push images to GitHub Container Registry with tags:
+   - Semantic version (e.g., v1.0.0)
+   - Minor version (e.g., v1.0)
+   - Commit SHA
+
+You can then use the images in your deployments:
+```yaml
+# For production (stable minor version)
+image: ghcr.io/hireflix/mmdb-server:1.0
+
+# For staging (specific version)
+image: ghcr.io/hireflix/mmdb-server:1.0.0
+
+# For development (commit SHA)
+image: ghcr.io/hireflix/mmdb-server:sha-a1b2c3d
+```
 
 ```
     Copyright (C) 2022-2024 Alexandre Dulaunoy
