@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
     steps:
