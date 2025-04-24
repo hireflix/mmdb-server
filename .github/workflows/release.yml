@@ -22,38 +22,9 @@ env:
   POETRY_VERSION: 1.7.1
 
 jobs:
-  check-authorization:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if user is authorized
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.RELEASE_TOKEN }}  # Fine-grained PAT with minimal permissions
-          script: |
-            try {
-              // Get repository collaborators
-              const { data: collaborators } = await github.rest.repos.listCollaborators({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                affiliation: 'direct'
-              });
-              
-              // Check if user is a collaborator with admin or write access
-              const isAuthorized = collaborators.some(collaborator => 
-                collaborator.login === context.actor && 
-                ['admin', 'write'].includes(collaborator.permissions.push)
-              );
-              
-              if (!isAuthorized) {
-                core.setFailed('User is not authorized to create releases');
-              }
-            } catch (e) {
-              core.setFailed(`Error checking repository permissions: ${e.message}`);
-            }
-
   prepare-release:
-    needs: check-authorization
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
       pull-requests: write
@@ -156,6 +127,7 @@ jobs:
   build-and-push:
     needs: prepare-release
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
       packages: write
