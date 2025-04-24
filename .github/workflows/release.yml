@@ -77,9 +77,17 @@ jobs:
         with:
           configuration: '.github/changelog-config.json'
           toTag: HEAD
-          fromTag: v$(poetry version -s)^
+          fromTag: ${{ steps.get_previous_tag.outputs.tag || github.event.repository.default_branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Get previous tag
+        id: get_previous_tag
+        run: |
+          # Try to get the latest tag, if it fails default to empty
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+        continue-on-error: true
 
       - name: Update CHANGELOG.md
         run: |
@@ -96,7 +104,7 @@ jobs:
           if [ -n "${{ steps.changelog.outputs.changelog }}" ]; then
             echo "${{ steps.changelog.outputs.changelog }}" >> temp_changelog.md
           else
-            echo "- No changes" >> temp_changelog.md
+            echo "- Initial release" >> temp_changelog.md
           fi
           echo "" >> temp_changelog.md
 
