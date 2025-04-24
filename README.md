@@ -179,22 +179,23 @@ Both the original work and this modified version are licensed under the GNU Affe
 
 To create a new release:
 
-1. Ensure you're on the `main` branch with a clean working directory
-2. Run the release script with the desired version bump type:
-   ```bash
-   ./scripts/release.sh <major|minor|patch>
-   ```
+1. Go to the [Actions tab](https://github.com/hireflix/mmdb-server/actions/workflows/release.yml) in the repository
+2. Click "Run workflow"
+3. Choose:
+   - Version type: `patch`, `minor`, or `major`
+   - Draft mode: Whether to create a draft PR (recommended for major versions)
+4. Click "Run workflow"
 
-The script will:
-- Update the version in `pyproject.toml`
-- Update `CHANGELOG.md` (if it exists)
-- Create and push a git tag
-- Trigger the GitHub Actions release workflow
+The workflow will:
+1. Create a release branch
+2. Bump the version in `pyproject.toml`
+3. Update `CHANGELOG.md` automatically from PR descriptions
+4. Create a Pull Request for review
 
-The release workflow will:
-1. Run tests and security checks
-2. Build multi-architecture Docker images
-3. Push images to GitHub Container Registry with tags:
+Once the PR is approved and merged:
+1. Tests and security checks will run
+2. Multi-architecture Docker images will be built
+3. Images will be pushed to GitHub Container Registry with tags:
    - Semantic version (e.g., v1.0.0)
    - Minor version (e.g., v1.0)
    - Commit SHA
@@ -211,20 +212,4 @@ image: ghcr.io/hireflix/mmdb-server:1.0.0
 image: ghcr.io/hireflix/mmdb-server:sha-a1b2c3d
 ```
 
-```
-    Copyright (C) 2022-2024 Alexandre Dulaunoy
-    Copyright (C) 2025 Daniel Limia (daniel@hireflix.com) (Docker optimizations)
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```

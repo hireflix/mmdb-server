@@ -1,25 +1,106 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      draft:
+        description: 'Create as draft release'
+        type: boolean
+        default: true
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'poetry'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Update version
+        id: version
+        run: |
+          poetry version ${{ github.event.inputs.version_type }}
+          echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: '.github/changelog-config.json'
+          toTag: HEAD
+          fromTag: v$(poetry version -s)^
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update CHANGELOG.md
+        run: |
+          echo "## [$(poetry version -s)] - $(date +%Y-%m-%d)" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          echo "${{ steps.changelog.outputs.changelog }}" >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          cat CHANGELOG.md >> temp_changelog.md
+          mv temp_changelog.md CHANGELOG.md
+
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: release/v${{ steps.version.outputs.new_version }}
+          title: 'chore: prepare release v${{ steps.version.outputs.new_version }}'
+          body: |
+            Automated release preparation for v${{ steps.version.outputs.new_version }}
+            
+            This PR was created automatically by the release workflow. It:
+            1. Bumps the version to v${{ steps.version.outputs.new_version }}
+            2. Updates the CHANGELOG.md
+            
+            Please review the changes and merge when ready.
+          labels: release
+          draft: ${{ github.event.inputs.draft }}
+
   build-and-push:
+    needs: prepare-release
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: release/v${{ needs.prepare-release.outputs.new_version }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -40,8 +121,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=v${{ needs.prepare-release.outputs.new_version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.prepare-release.outputs.new_version }}
             type=sha,prefix=sha-
 
       - name: Build and push
