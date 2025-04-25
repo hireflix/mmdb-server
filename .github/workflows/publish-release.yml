@@ -66,14 +66,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Get changelog content
+        id: changelog
+        run: |
+          CHANGELOG=$(cat CHANGELOG.md | sed -n '/^## \[/,/^## \[/p' | sed '$d')
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
           body: |
-            ## What's Changed
-            ${{ github.event.pull_request.body }}
+            ${{ steps.changelog.outputs.content }}
 
             ## 📦 Docker Images
             Pull the new version:
