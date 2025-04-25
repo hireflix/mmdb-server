@@ -20,7 +20,7 @@ from wsgiref.simple_server import make_server
 
 import falcon
 import maxminddb
-import redis
+import redis.client
 from falcon import Request, Response
 from maxminddb.reader import Reader
 
@@ -71,8 +71,8 @@ class MMDBServer:
         self.mmdb_files = self.mmdb_file.split(",")
         self.country_info: Dict[str, CountryInfo] = self._load_country_info()
         self.mmdbs: List[MMDBMeta] = self._load_mmdb_databases()
-        self.rdb: Optional[redis.Redis[bytes]] = (
-            self._setup_redis() if self.pubsub else None
+        self.rdb: Optional[redis.client.Redis] = (  # type: ignore[type-arg]
+            self._setup_redis() if self.pubsub else None  # type: ignore
         )
         self.httpd = None
         self.app: falcon.App = self._setup_app()
@@ -99,7 +99,7 @@ class MMDBServer:
             mmdbs.append(meta)
         return mmdbs
 
-    def _setup_redis(self) -> redis.Redis[bytes]:
+    def _setup_redis(self) -> redis.client.Redis:  # type: ignore[type-arg]
         return redis.Redis(host="127.0.0.1")
 
     def _setup_app(self) -> falcon.App:
@@ -116,9 +116,9 @@ class MMDBServer:
             return False
 
     def pub_lookup(self, value: str) -> bool:
-        if not self.pubsub or not self.rdb:
+        if not self.pubsub or not self.rdb:  # type: ignore
             return False
-        self.rdb.publish("mmdb-server::lookup", f"{value}")
+        self.rdb.publish("mmdb-server::lookup", f"{value}")  # type: ignore
         return True
 
     def country_lookup(self, country: str) -> CountryInfo:
@@ -140,9 +140,9 @@ class MMDBServer:
                 logger.error(f"Error closing MMDB database: {e}")
 
         # Close Redis connection
-        if self.rdb:
+        if self.rdb:  # type: ignore
             try:
-                self.rdb.close()
+                self.rdb.close()  # type: ignore
             except Exception as e:
                 logger.error(f"Error closing Redis connection: {e}")
 
