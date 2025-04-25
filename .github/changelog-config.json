@@ -21,7 +21,7 @@
             "labels": ["chore", "maintenance"]
         }
     ],
-    "template": "${{CHANGELOG}}\n\n## 📦 Docker Images\n\nPull the new version:\n```bash\ndocker pull ghcr.io/hireflix/mmdb-server:${{NEXT_VERSION}}\n```",
+    "template": "${{CHANGELOG}}",
     "pr_template": "- ${{TITLE}} (#${{NUMBER}})",
     "empty_template": "- No changes",
     "max_tags_to_fetch": 200,
