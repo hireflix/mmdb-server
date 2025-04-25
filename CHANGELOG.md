@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.2] - 2025-04-25
+
+- No changes
+
+
 ## [2.1.1] - 2025-04-25
 
 - No changes
