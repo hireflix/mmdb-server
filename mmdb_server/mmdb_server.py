@@ -100,12 +100,20 @@ class MMDBServer:
         return mmdbs
 
     def _setup_redis(self) -> redis.client.Redis:  # type: ignore[type-arg]
-        return redis.Redis(host="127.0.0.1")
+        return redis.Redis(host="127.0.0.1", decode_responses=True)
 
     def _setup_app(self) -> falcon.App:
         app = falcon.App()
+
+        # API endpoints
         app.add_route("/geolookup/{value}", GeoLookup(self))  # type: ignore
         app.add_route("/", MyGeoLookup(self))  # type: ignore
+
+        # Health check endpoints
+        health = HealthCheck(self)
+        app.add_route("/health/live", health, suffix="liveness")  # type: ignore
+        app.add_route("/health/ready", health, suffix="readiness")  # type: ignore
+
         return app
 
     def valid_ip_address(self, ip_addr: str) -> bool:
@@ -252,6 +260,47 @@ class MyGeoLookup(BaseGeoLookup):
         if ips:
             resp.media = self.lookup_ip(ips[0])
         return
+
+
+class HealthCheck:
+    def __init__(self, server: MMDBServer):
+        self.server = server
+
+    def on_get_liveness(self, req: Request, resp: Response) -> None:
+        """Liveness probe - checks if the server is running"""
+        resp.status = falcon.HTTP_200
+        resp.media = {"status": "alive", "version": self.server.version}
+
+    def on_get_readiness(self, req: Request, resp: Response) -> None:
+        """Readiness probe - checks if the server is ready to handle requests"""
+        try:
+            # Check if MMDB databases are loaded
+            if not self.server.mmdbs:
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "status": "not ready",
+                    "reason": "No MMDB databases loaded",
+                }
+                return
+
+            # All checks passed
+            resp.status = falcon.HTTP_200
+            resp.media = {
+                "status": "ready",
+                "databases": [
+                    {
+                        "description": mmdb["description"],
+                        "type": mmdb["db_source"],
+                        "build_date": mmdb["build_db"],
+                    }
+                    for mmdb in self.server.mmdbs
+                ],
+            }
+
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            resp.status = falcon.HTTP_503
+            resp.media = {"status": "not ready", "reason": str(e)}
 
 
 def main() -> None:
