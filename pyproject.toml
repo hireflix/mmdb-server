@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mmdb-server"
-version = "2.1.2"
+version = "2.2.0"
 description = "Fast API server to lookup IP addresses for their geographic location"
 authors = ["Alexandre Dulaunoy", "Daniel <daniel@hireflix.com>"]
 readme = "README.md"
